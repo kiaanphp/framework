@@ -219,28 +219,5 @@ trait StatementsTrait {
         return $this->phpTag . 'endif; ?>';
     }
 
-    /**
-     * Compile the forelse statements into valid PHP.
-     *
-     * @param string $expression empty if it's inside a for loop.
-     * @return string
-     */
-    protected function compileEmpty($expression = '')
-    {
-        if ($expression == '') {
-            $empty = '$__empty_' . $this->forelseCounter--;
-            return $this->phpTag . "endforeach; if ({$empty}): ?>";
-        }
-        return $this->phpTag . "if (empty{$expression}): ?>";
-    }
-
-    /* 
-    * end-empty
-    */
-    protected function compileEndEmpty()
-    {
-        return $this->phpTag . 'endif; ?>';
-    }
-
 }
 

@@ -19,6 +19,7 @@ namespace Kiaan\Config;
 |---------------------------------------------------
 */
 use Kiaan\Config\Config\Loader;
+use Kiaan\Config\Config\Database;
 
 /*
 |---------------------------------------------------
@@ -31,8 +32,9 @@ class Config {
      *  Traits
      * 
     */
+    use Config\ConfigSystemTrait;
     use Config\FileSystemTrait;
-
+    
     /**
      *  Cache
      * 
@@ -102,6 +104,21 @@ class Config {
     }
 
     /**
+     *  Database
+     * 
+    */
+    public function db() {
+      // PDO
+      $pdo = $this->getPdo();
+
+      // Table
+      $table = $this->getTable();
+
+      // Initialize
+     return new Database($pdo, $table);
+    }
+    
+    /**
      *  All
      * 
     */
@@ -110,7 +127,7 @@ class Config {
     }
 
     /**
-     *  Get
+     * Get
      * 
     */
     public function get($content, $key, $vars=[], $default=null) {
@@ -118,7 +135,7 @@ class Config {
     }
 
     /**
-     *  Set
+     * Set
      * 
     */
     public function set($content, $key, $value) {
@@ -126,7 +143,7 @@ class Config {
     }
 
     /**
-     *  Has
+     * Has
      * 
     */
     public function has($content, $key) {

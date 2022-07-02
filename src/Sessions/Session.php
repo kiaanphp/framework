@@ -52,8 +52,8 @@ class Session {
      *
      * @return mixed
      */
-    public function get($key) {
-        return isset($_SESSION[$key]) ? $_SESSION[$key] : null;
+    public function get($key, $default=null) {
+        return isset($_SESSION[$key]) ? $_SESSION[$key] : $default;
     }
 
     /**

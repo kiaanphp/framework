@@ -20,6 +20,7 @@ use Kiaan\Route;
 use Kiaan\Validator;
 use Kiaan\Trans;
 use Kiaan\Config;
+use Kiaan\Csrf;
 
 #--------------------------------------------------
 /**
@@ -171,8 +172,8 @@ if (!function_exists('validate')) {
  *
  */
 if (!function_exists('route')) {
-    function route($name) {
-       return Route::url($name);
+    function route($name, $parameters=[]) {
+       return Route::url($name, $parameters);
     }
 }
 #--------------------------------------------------
@@ -183,8 +184,8 @@ if (!function_exists('route')) {
  *
  */
 if (!function_exists('goRoute')) {
-    function goRoute($name) {
-        return Url::go(Route::url($name));
+    function goRoute($name, $parameters=[]) {
+        return Route::go($name, $parameters);
     }
 }
 #--------------------------------------------------
@@ -213,3 +214,14 @@ if (!function_exists('config')) {
 }
 #--------------------------------------------------
 
+#--------------------------------------------------
+/**
+ * CSRF
+ *
+ */
+if (!function_exists('csrf_token')) {
+    function csrfToken() {
+        return Csrf::get();
+    }
+}
+#--------------------------------------------------

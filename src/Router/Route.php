@@ -33,6 +33,7 @@ class Route {
     use Route\OptionsTrait;
     use Route\ToolsTrait;
     use Route\CollectTrait;
+    use Route\Helper;
     
     /**
     * Route containers
@@ -83,6 +84,18 @@ class Route {
     protected $methodInput = '_method';
 
     /**
+    * Patterns
+    *
+    */
+    protected $patterns = [];
+
+    /**
+    * Current
+    *
+    */
+    protected $current;
+
+    /**
     * Options
     *
     */
@@ -90,7 +103,7 @@ class Route {
         "prefix" => null,
         "suffix" => null,
         "name" => null,
-        "namespace" => null,
+        "controller" => null,
         "middleware" => array(),
     ];
 
@@ -105,6 +118,42 @@ class Route {
     *
     */
     protected $route_parameter = ["{", "}"];
+
+    /**
+    * Route optional parameter
+    *
+    */
+    protected $route_optional_parameter = ["[", "]"];
+
+    /**
+    * Fallback
+    *
+    */
+    protected $fallback = null;
+
+    /**
+    * Route
+    *
+    */
+    protected $route = null;
+
+    /**
+    * Routes in group
+    *
+    */
+    protected $routes_in_group = false;
+
+    /**
+    * Routes not in group toggle
+    *
+    */
+    protected $routes_not_in_group_toggle = true;
+
+    /**
+    * Helpers
+    *
+    */
+    protected $helpers = [];
 
     /**
      * Construct
@@ -223,7 +272,7 @@ class Route {
             "prefix" => null,
             "suffix" => null,
             "name" => null,
-            "namespace" => null,
+            "controller" => null,
             "middleware" => array(),
         ];
     }
@@ -237,7 +286,7 @@ class Route {
      */
     protected function add(String $method, String $uri, $callback, Array $options = []) {
         // URI
-        $uri = trim($this->options['prefix'] . $uri . $this->options['suffix'], '/');
+        $uri = trim($this->options['prefix'] . $uri . '/' . $this->options['suffix'], '/');
         $uri = $this->prefixGates[$this->gate].'/'.$uri;
         $uri = ($uri != '/') ? '/'.$uri : $uri;
         $uri = str_replace("//", "/", $uri);
@@ -265,11 +314,11 @@ class Route {
                 "callback" => $callback,
                 "options" => [
                     "name" => $this->options['name'],
-                    "namespace" => $this->options['namespace'],
+                    "controller" => $this->options['controller'],
                     "middleware" => $this->options['middleware'],
                 ],
             ];
-
+            
             // Set options defaults
             $this->setOptionsDefaults();
 
@@ -315,15 +364,15 @@ class Route {
         $request = (empty($request)) ? $request_url : $request ;
         
         $request = '/' . ltrim($request, '/');
-        $request = ($request == '/') ? '/' : urldecode($request) . '/';
+        // $request = ($request == '/') ? '/' : urldecode($request) . '/';
         $request = rtrim($request, '/');
         $request = (empty($request)) ? '/' : $request . '/';
 
         // Method
         $method = strtolower($_SERVER["REQUEST_METHOD"]);
 
+        // Custom method
         if($method == 'post'){
-            // Custom method
             if (isset($_POST[$this->methodInput])) {
                 $method  = strtolower($_POST[$this->methodInput]);
             }
@@ -342,7 +391,6 @@ class Route {
             $routes[$key]['uri'] = '#^' . preg_replace("/\/" . $this->route_parameter[0] . "(.*?)" . $this->route_parameter[1] . "/", '\/([^\/]*)', $routes[$key]['uri']) . '$#';
 
             if (preg_match($routes[$key]['uri'], $request, $params)) {
-
                 // Route
                 $route = $myRoute;
                 
@@ -358,15 +406,22 @@ class Route {
                 // Cross-site request forgery 
                 $this->executeCsrf($route);
 
+                // Current
+                $this->current = $route;
+
                 // Controller
                 return $this->executeController($route, $params);
             }
 
         }
-            
-            // 404
-            http_response_code(404);
-            throw new \Exception("Routes not found!");
+        // Fallback
+        if(!is_null($this->fallback)){
+            return $this->executeFallback($this->fallback);
+        }
+
+        // 404
+        http_response_code(404);
+        throw new \Exception("Routes not found!");
     }
 
 }

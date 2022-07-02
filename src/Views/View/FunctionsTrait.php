@@ -41,22 +41,6 @@ trait FunctionsTrait {
         return ' ?>';
     } 
 
-    /* 
-    * DD
-    */
-    protected function compileDd($expression)
-    {
-        return $this->phpTagEcho . " '<pre>'; var_dump$expression; echo '</pre>';?>";
-    }
-
-    /*
-    * Dump
-    */
-    protected function compileDump($expression)
-    {
-        return $this->phpTagEcho . " \$this->dump{$expression};?>";
-    }
-
     /**
      * Compile the unless statements into valid PHP.
      *
@@ -98,6 +82,29 @@ trait FunctionsTrait {
     }
 
     protected function compileEndIsset()
+    {
+        return $this->phpTag . 'endif; ?>';
+    }
+    
+    /**
+     * Compile the forelse statements into valid PHP.
+     *
+     * @param string $expression empty if it's inside a for loop.
+     * @return string
+     */
+    protected function compileEmpty($expression = '')
+    {
+        if ($expression == '') {
+            $empty = '$__empty_' . $this->forelseCounter--;
+            return $this->phpTag . "endforeach; if ({$empty}): ?>";
+        }
+        return $this->phpTag . "if (empty{$expression}): ?>";
+    }
+
+    /* 
+    * end-empty
+    */
+    protected function compileEndEmpty()
     {
         return $this->phpTag . 'endif; ?>';
     }
@@ -170,6 +177,7 @@ trait FunctionsTrait {
 
     /*
     * Public
+    *
     * Get public url
     */
     protected function compilePublic($expression)
@@ -191,12 +199,14 @@ trait FunctionsTrait {
     }
 
     /*
-    * Asset
+    * Json
+    *
     * Get asset url
     */
-    protected function compileAsset($expression)
+    protected function compileJson($array)
     {
-        return $this->compilePublic($expression);
+        $array = $this->stripParentheses($array);
+        return "<?php echo json_encode($array); ?>";
     }
 
 }

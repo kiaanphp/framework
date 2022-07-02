@@ -36,7 +36,7 @@ trait MethodsTrait {
             "prefix" => $options['prefix'] ?? '',
             "suffix" => $options['suffix'] ?? '',
             "name" => $options['name'] ?? '',
-            "namespace" => $options['namespace'] ?? '',
+            "controller" => $options['controller'] ?? '',
             "middleware" => $options['middleware'] ?? array(),
         ];
 
@@ -45,13 +45,49 @@ trait MethodsTrait {
             $this->setOptions($options);
         }
 
+        // Optional parameters
+        $startTag = $this->route_optional_parameter[0];
+        $endTag = $this->route_optional_parameter[1];
+        $pattern = "#\s*\\$startTag.+\\$endTag\s*#U";
+        $uri_pattern = explode(":", $uri)[0];
+
+        if(preg_match($pattern, $uri_pattern)){
+            return $this->addToMethodsOptionalParameters($name, $uri, $callback, $options);
+        }
+
         // Add
         $this->add($name, $uri, $callback, $options);
 
         // Options defaults
         $this->setOptions($optionsCache);
+
+        // Set route as group
+        if($this->routes_in_group && !$this->routes_not_in_group_toggle){
+            $this->routes_in_group = false; 
+            $this->routes_not_in_group_toggle = true; 
+        }
+        if(!$this->routes_in_group){
+            $this->route = array_key_last($this->routes); 
+        }else{
+            $this->route[] = array_key_last($this->routes);
+        }
     }
-    
+
+    protected function addToMethodsOptionalParameters($name, $uri, $callback, $options) {
+        // Without
+        $startTag = $this->route_optional_parameter[0];
+        $endTag = $this->route_optional_parameter[1];
+        $pattern = "#\s*\\$startTag.+\\$endTag\s*#U";
+
+        $url = preg_replace($pattern, '', $uri);
+        $url = preg_replace('~/+~', '/', $url);
+        $this->addToMethods($name, $url, $callback, $options);
+
+        // With
+        $url = str_replace(['[', ']'], ['{', '}'], $uri);
+        $this->addToMethods($name, $url, $callback, $options);
+    }
+
     /**
      * Add new get method
      *

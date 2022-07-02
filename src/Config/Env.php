@@ -25,7 +25,8 @@ class Env {
      * 
     */
     use Env\FileSystemTrait;
-
+    use Env\ConfigSystemTrait;
+    
     /**
      * Construct
      * 
@@ -59,8 +60,8 @@ class Env {
      *
      * Get environment variable by the given key
      */
-    public function get($key) {
-        return isset($_ENV[$key]) ? $_ENV[$key] : null;
+    public function get($key, $default=null) {
+        return isset($_ENV[$key]) ? $_ENV[$key] : $default;
     }
 
     /**
@@ -133,7 +134,7 @@ class Env {
      * Load content
     */
     public function load(){
-       $loader = new Env\Loader();
+       $loader = new Env\Loader($this->commentSymbol);
        $loader->env = $this;
 
        return $loader;

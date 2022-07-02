@@ -19,14 +19,14 @@ namespace Kiaan;
 |---------------------------------------------------
 */
 use Kiaan\Facade;
-use Kiaan\Database\ConnectPdo as Base;
+use Kiaan\Security\Password as Base;
 
 /*
 |---------------------------------------------------
-| Connect PDO
+| Password
 |---------------------------------------------------
 */
-class ConnectPdo {
+class Password {
     
     /*
     * Facade

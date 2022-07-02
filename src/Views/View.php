@@ -29,9 +29,43 @@ class View extends Engine {
 
     /**
      * Page 
+     * 
      * Render page
      */
     public function page($path, $data=[]) {
+        // Global
+        if(!empty($this->dataGlobal)){
+            if(isset($this->dataGlobal['*'])){
+                $global[] = $this->dataGlobal['*'];
+            }
+
+            if(isset($this->dataGlobal[$path])){
+                $global[] = $this->dataGlobal[$path];
+            }
+
+            $pathGlobal = explode('.', $path);
+            if(count($pathGlobal) > 1){
+                array_pop($pathGlobal);
+                $pathGlobal = implode('.', $pathGlobal);
+
+                if(isset($this->dataGlobal["$pathGlobal.*"])){
+                    $global[] = $this->dataGlobal["$pathGlobal.*"];
+                }
+            }
+            
+            $my_global = array();
+            foreach($global as $global){
+                $my_global = array_merge($my_global, $global);
+            }
+        }else{
+            $my_global = array();
+        }
+
+        // Data
+        $data = array_merge($this->data, $my_global, $data);
+        $this->data = array();
+        
+        // Render
         echo $this->clean();
         echo $this->run($path, $data);
         die();
@@ -39,9 +73,22 @@ class View extends Engine {
 
     /**
      * Render 
+     * 
      * Render string
      */
     public function render($path, $data=[]) {
+        // Global
+        if(isset($this->dataGlobal['*'])){
+            $global = $this->dataGlobal['*'];
+        }else{
+            $global = array();
+        }
+
+        // Data
+        $data = array_merge($this->data, $global, $data);
+        $this->data = array();
+
+        // Render
         echo $this->clean();
         echo $this->runString($path, $data);
         die();
@@ -49,12 +96,39 @@ class View extends Engine {
 
     /**
      * HTML page
+     * 
      * Get html code for page
      */
     public function html($path, $data=[]) {
+        // Global
+        if(isset($this->dataGlobal['*'])){
+            $global = $this->dataGlobal['*'];
+        }else{
+            $global = array();
+        }
+
+        // Data
+        $data = array_merge($this->data, $global, $data);
+        $this->data = array();
+
+        // Render
         $this->clean();
         $content = $this->run($path, $data);
         return $this->runString($content, $data);
+    }
+
+    /**
+     * Data
+     * 
+     */
+    public function data($variables, $value = null) {
+        if (is_array($variables)) {
+            $this->data = array_merge($variables, $this->data);
+        } else {
+            $this->data = array_merge([$variables => $value], $this->data);
+        }
+
+        return $this;
     }
 
     /**
@@ -63,20 +137,21 @@ class View extends Engine {
      * @param $templateName
      * @return bool
      */
-    public function exist($templateName)
+    public function exists($templateName)
     {
         $file = $this->getTemplateFile($templateName);
-        return \file_exists($file);
+        return file_exists($file);
     }
 
     /**
+     * Add helper
+     * 
      * Register a handler for custom directives, helper function & fillter.
-     *
      * @param string $name
      * @param callable $handler
      * @return void
      */
-    public function helper($name, callable $handler)
+    public function addHelper($name, callable $handler)
     {
         $this->directiveRT($name, $handler);
     }
@@ -85,23 +160,36 @@ class View extends Engine {
      * Adds a global variable. If <b>$varname</b> is an array then it merges all the values.
      * <b>Example:</b>
      * <pre>
-     * $this->share('variable',10.5);
-     * $this->share('variable2','hello');
+     * $this->global('variable',10.5);
+     * $this->global('variable2','hello');
      * // or we could add the two variables as:
-     * $this->share(['variable'=>10.5,'variable2'=>'hello']);
+     * $this->global(['variable'=>10.5,'variable2'=>'hello']);
      * </pre>
      *
      * @param string|array $varname It is the name of the variable or it is an associative array
      * @param mixed $value
      * @return $this
      */
-    public function share($varname, $value = null)
+    public function global($varname, $value = null, $target = '*')
     {
         if (is_array($varname)) {
-            $this->variablesGlobal = \array_merge($this->variablesGlobal, $varname);
+            // Target
+            $target = str_replace(["/", "\\"], ".", (is_null($value) ? '*' : trim(trim($value, '/'))));
+
+            // Value
+            $value = $varname;
         } else {
-            $this->variablesGlobal[$varname] = $value;
+            // Target
+            $target = str_replace(["/", "\\"], ".", trim(trim($target, '/')));
+
+            // Value
+            $value = [$varname => $value];
         }
+
+        // Set
+        $this->dataGlobal[$target] = $value;
+        $this->variablesGlobal[$target] = $value;
+        
         return $this;
     }
 

@@ -27,12 +27,9 @@ trait MiddlewareTrait {
     public function executeMiddleware($route) {
         // Middlewares
         $middlewares = $route['options']['middleware'];
-
+        
         //Check of middlewares
-        foreach ($middlewares as $key => $value) {
-            // Middleware
-            $middleware = $middlewares[$key];
-       
+        foreach ($middlewares as $key => $middleware) {
             // Call function
             if (is_callable($middleware)) {
                 call_user_func($middleware);
@@ -63,7 +60,7 @@ trait MiddlewareTrait {
             if (class_exists($class)) {
                 $object = new $class;
                 if (method_exists($object, $method)) {
-                    return call_user_func_array([$object, $method], $params);
+                    call_user_func_array([$object, $method], $params);
                 } else {
                     throw new \Exception("The method " . $method . " is not exists at " . $class);
                 }

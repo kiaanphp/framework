@@ -36,7 +36,10 @@ class Loader {
      * Construct
      * 
     */
-    public function __construct(){}
+    public function __construct($comment){
+        // Set comment
+        $this->comment = $comment;
+    }
 
     /**
      * Parse
@@ -52,10 +55,12 @@ class Loader {
         $result = array();
         foreach ($lines as $line) {
 
-            if (strpos(trim($line), '#') === 0) {
+            // Comment
+            if (strpos(trim($line), $this->comment) === 0) {
                 continue;
             }
 
+            // Define a variable
             $name = trim(explode('=', $line)[0]);
             $value = trim(explode('=', $line)[1] ?? null);
 

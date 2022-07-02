@@ -24,13 +24,13 @@ trait OptionsTrait {
      * Set options
      * 
     */
-    protected function setOptions($options, string $key=null, string|array $value=null){
+    protected function setOptions($options, string $key=null, $value=null){
       if(is_null($key)){
         $this->options = [
           "prefix" => isset($options['prefix']) ? $this->options['prefix'] . trim($options['prefix']) : null,
           "suffix" => isset($options['suffix']) ? $this->options['suffix'] . trim($options['suffix']) : null,
           "name" => isset($options['name']) ? $this->options['name'] . trim($options['name']) : null,
-          "namespace" => isset($options['namespace']) ? $this->options['namespace'] . trim($options['namespace']) : null,
+          "controller" => isset($options['controller']) ? $this->options['controller'] . trim($options['controller']) : null,
           "middleware" => isset($options['middleware']) ? ((is_array($options['middleware'])) ? array_merge($this->options['middleware'] ,$options['middleware']) : array_merge($this->options['middleware'] ,array($options['middleware']))) : array(),
         ];
       }else{
@@ -38,7 +38,7 @@ trait OptionsTrait {
           "prefix" => ($key=='prefix') ? $this->options['prefix'] . trim($value) : null,
           "suffix" => ($key=='suffix') ? $this->options['suffix'] . trim($value) : null,
           "name" => ($key=='name') ? $this->options['name'] . trim($value) : null,
-          "namespace" => ($key=='namespace') ? $this->options['namespace'] . trim($value) : null,
+          "controller" => ($key=='controller') ? $this->options['controller'] . trim($value) : null,
           "middleware" => ($key=='middleware') ? array_merge($this->options['middleware'] ,$value) : array(),
         ];
       }
@@ -53,17 +53,102 @@ trait OptionsTrait {
           "prefix" => null,
           "suffix" => null,
           "name" => null,
-          "namespace" => null,
+          "controller" => null,
           "middleware" => array(),
       ];
     }
 
+    /**
+    * Chaining methods prepare
+    *
+    */
+    public function chainingMethodsPrepare($method, ...$arg) {
+      // Not routes
+      if(is_null($this->route)){ return false; }   
+
+      if(!$this->routes_in_group){
+        // Route not in group
+          $this->{$method}($this->route, ...$arg);
+      }else{
+        // Route in group
+        foreach($this->route as $route){
+          $this->{$method}($route, ...$arg);
+        }
+      }
+
+      // Return
+      return $this;
+    }
+
+    /**
+    * Prefix
+    *
+    */
+    public function prefix($value) {
+      return $this->chainingMethodsPrepare("prefixPrepare", $value);
+    }
+
+    protected function prefixPrepare($route, $value) {
+      $this->routes[$route]['uri'] = rtrim('/' . trim($value, '/') . '/' . trim($this->routes[$route]['uri'], '/'), '/');
+    }
+
+    /**
+    * Suffix
+    *
+    */
+    public function suffix($value) {
+      return $this->chainingMethodsPrepare("suffixPrepare", $value);
+    }
+
+    protected function suffixPrepare($route, $value) {
+      $this->routes[$route]['uri'] .= '/' . trim('/' . trim($value, '/') , '/');
+    }
+
+    /**
+    * name
+    *
+    */
+    public function name($value) {
+      return $this->chainingMethodsPrepare("namePrepare", $value);
+    }
+
+    protected function namePrepare($route, $value) {
+      $this->routes[$route]['options']['name'] .= trim($value);
+    }
+
+    /**
+    * Middleware
+    *
+    */
+    public function middleware($value) {
+      return $this->chainingMethodsPrepare("middlewarePrepare", $value);
+    }
+
+    protected function middlewarePrepare($route, $value) {
+      $this->routes[$route]['options']['middleware'][] = $value;
+    }
+
+    /**
+    * Controller
+    *
+    */
+    public function controller($value) {
+      return $this->chainingMethodsPrepare("controllerPrepare", $value);
+    }
+
+    protected function controllerPrepare($route, $value) {
+      $this->routes[$route]['options']['controller'] .= $value;
+    }
+    
      /**
       * Group
       *
-      * @param string $value
       */
-      public function group(array $options, callable $callback) {
+      public function group(callable $callback, array $options=[]) {
+        // Set route as group
+        $this->route = [];
+        $this->routes_in_group = true;
+
         // Options
         $this->setOptions($options);
 
@@ -76,6 +161,10 @@ trait OptionsTrait {
         // Options defaults
         $this->setOptionsDefaults();
 
+        // Set route as group
+        $this->routes_not_in_group_toggle = false;
+        
+        // Return
         return $this;
      }
 

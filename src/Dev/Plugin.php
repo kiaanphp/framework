@@ -193,7 +193,8 @@ class Plugin {
     */
     public function command($class, $func=false){
         // Class
-        $class = new (str_replace([".", "/"], "\\", $this->info($class)->extra->{$this->extra['services']}));
+        $class = str_replace([".", "/"], "\\", $this->info($class)->extra->{$this->extra['services']});
+        $class = new $class;
         
         if(!$func){
             $handle = $this->getHandle();

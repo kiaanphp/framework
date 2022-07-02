@@ -40,7 +40,7 @@ trait Facade {
     {
         // Get arguments
         $arguments = func_get_args();
-
+        
         // Class instance
         $classInstance = $this->__facade();
         $classInstance = new $classInstance(...$arguments);

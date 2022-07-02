@@ -108,7 +108,6 @@ trait CollectTrait {
                 $except = array_map('trim', $except);
             }
 
-
             $methods = array_flip($methods);
 
             foreach($except as $key){   
@@ -168,6 +167,18 @@ trait CollectTrait {
     }
 
     /**
+     * Methods collection routes
+     *
+     */
+    public function methods($methods, $uri, $callback, $options = []) {
+        // Methods
+        $methods = array_unique($methods);
+
+        // Add to collection
+        $this->addToAnyCollect($uri, $callback, $options, $methods);
+    }
+
+    /**
      * Add crud collection routes
      *
      */
@@ -195,30 +206,41 @@ trait CollectTrait {
             [
                 "controller" => "show",
                 "method" => "get",
-                "uri" => "/show",
+                "uri" => "/show//".$this->route_parameter[0]."id".$this->route_parameter[1],
             ],
 
             [
                 "controller" => "edit",
                 "method" => "get",
                 "uri" => "/edit",
+                "uri" => "/show//".$this->route_parameter[0]."id".$this->route_parameter[1]."/edit",
             ],
 
             [
-                "controller" => "put",
+                "controller" => "update",
                 "method" => "put",
-                "uri" => "",
+                "uri" => '/'.$this->route_parameter[0]."id".$this->route_parameter[1],
             ],
 
             [
                 "controller" => "delete",
                 "method" => "delete",
-                "uri" => "",
+                "uri" => '/'.$this->route_parameter[0]."id".$this->route_parameter[1],
             ],
         );
 
         // Add to collection
         $this->addToCollect($uri, $callback, $options, $list);
+    }
+
+    /**
+     * Add cruds collection routes
+     *
+     */
+    public function cruds(array $uri) {
+        foreach($uri as $url){
+            $this->crud($url[0], $url[1], []); 
+        }
     }
 
 }

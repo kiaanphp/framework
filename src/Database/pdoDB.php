@@ -22,10 +22,10 @@ use PDO;
 
 /*
 |---------------------------------------------------
-| Connect PDO
+| PDo Database
 |---------------------------------------------------
 */
-class ConnectPdo {
+class pdoDB {
 
     /* 
     * PDO
@@ -37,9 +37,7 @@ class ConnectPdo {
      *
      * @return void
      */
-    public function __construct($connectionString=null, $getError=false) {
-        $this->connect($connectionString, $getError);
-    }
+    public function __construct() {}
 
     /**
      * Connect

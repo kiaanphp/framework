@@ -50,8 +50,8 @@ class Cookie {
      * @param string $key
      *
      */
-    public function get($key) {
-        return isset($_COOKIE[$key]) ? $_COOKIE[$key] : null;
+    public function get($key, $default=null) {
+        return isset($_COOKIE[$key]) ? $_COOKIE[$key] : $default;
     }
 
     /**

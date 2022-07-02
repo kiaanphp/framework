@@ -61,6 +61,9 @@ class Engine {
     /* PHP tag with echo */
     public $phpTagEcho = '<?php echo ';
 
+    /* Escaped tag */
+    public $escapedTag = '@';
+
     /** CSRF */
     public $csrf = ["input"=>"", "value"=>""];
 
@@ -77,18 +80,6 @@ class Engine {
     /** @var string The "regular" / legacy echo string format. */
     protected $echoFormat = '\htmlentities(%s, ENT_QUOTES, \'UTF-8\', false)';
     protected $echoFormatOld = 'static::e(%s)';
-
-    /* Auth */
-    /** @var string $currentUser Current user. Example: hassan */
-    public $currentUser;
-    /** @var string $currentRole Current role. Example: admin */
-    public $currentRole;
-    /** @var string[] $currentPermission Current permission. Example ['edit','add'] */
-    public $currentPermission = [];
-    /** @var callable callback of validation. It is used for @can,@cannot */
-    public $authCallBack;
-    /** @var callable callback of validation. It is used for @canany */
-    public $authAnyCallBack;
 
     /*
     * File extension
@@ -119,6 +110,10 @@ class Engine {
     protected $sectionStack = [];
     /** @var array The stack of in-progress loops. */
     protected $loopsStack = [];
+    /** @var array Dictionary of data */
+    protected $data = [];
+    /** @var array Dictionary of global data */
+    protected $dataGlobal = [];
     /** @var array Dictionary of variables */
     protected $variables = [];
     /** @var null Dictionary of global variables */
@@ -168,14 +163,6 @@ class Engine {
     protected $escapeBlocks = [];
     /** @var int Counter to keep track of nested forelse statements. */
     protected $forelseCounter = 0;
-    /** @var array The components being rendered. */
-    protected $componentStack = [];
-    /** @var array The original data passed to the component. */
-    protected $componentData = [];
-    /** @var array The slot contents for the component. */
-    protected $slots = [];
-    /** @var array The names of the slots being rendered. */
-    protected $slotStack = [];
     /** @var string tag unique */
     protected $PARENTKEY = '@parentXYZABC';
     /** mode */
@@ -209,25 +196,13 @@ class Engine {
         $this->compiledPath = $compiledPath;
 
         $this->setMode($mode);
-        $this->authCallBack = function ($action = null, /** @noinspection PhpUnusedParameterInspection */ $subject = null) {
-            return \in_array($action, $this->currentPermission, true);
-        };
         
-        $this->authAnyCallBack = function ($array = []) {
-            foreach ($array as $permission) {
-                if (\in_array($permission, $this->currentPermission, true)) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
         if (!\file_exists($this->compiledPath)) {
             $ok = @\mkdir($this->compiledPath, 0777, true);
             if ($ok === false) {
                 $this->showError(
                     'Constructing',
-                    "Unable to create the compile folder [{$this->compiledPath}]. Check the permissions of it's parent folder.",
+                    "Unable to create the compile folder [{$this->compiledPath}].",
                     true
                 );
             }
@@ -270,7 +245,7 @@ class Engine {
     {
         \ob_get_clean();
         echo "<div style='background-color: red; color: black; padding: 3px; border: solid 1px black;'>";
-        echo "Kiaan templating engine Error [{$id}]:<br>";
+        echo "Templating engine Error [{$id}]:<br>";
         echo "<span style='color:white'>$text</span><br></div>\n";
         if ($critic) {
             die(1);
@@ -509,7 +484,7 @@ class Engine {
                 \ob_end_clean();
             }
             throw $e;
-        } catch (ParseError $e) { // PHP 7
+        } catch (\ParseError $e) { // PHP 7
             while (\ob_get_level() > $obLevel) {
                 \ob_end_clean();
             }
@@ -881,6 +856,21 @@ class Engine {
     public function includeWhen($bool = false, $view = '', $value = [])
     {
         if ($bool) {
+            return $this->runChild($view, $value);
+        }
+        return '';
+    }
+
+    /**
+     * @param bool $bool
+     * @param string $view name of the view
+     * @param array $value arrays of values
+     * @return string
+     * @throws Exception
+     */
+    public function includeUnless($bool = false, $view = '', $value = [])
+    {
+        if (!$bool) {
             return $this->runChild($view, $value);
         }
         return '';
@@ -1372,18 +1362,6 @@ class Engine {
         }
     }
 
-    public function dump($object, $jsconsole = false)
-    {
-        if (!$jsconsole) {
-            echo '<pre>';
-            \var_dump($object);
-            echo '</pre>';
-        } else {
-            /** @noinspection BadExpressionStatementJS */
-            echo '<script>console.log(' . \json_encode($object) . ')</script>';
-        }
-    }
-
     /**
      * Start injecting content into a section.
      *
@@ -1717,116 +1695,6 @@ class Engine {
     }
 
     /**
-     * Start a component rendering process.
-     *
-     * @param string $name
-     * @param array $data
-     * @return void
-     */
-    public function startComponent($name, array $data = [])
-    {
-        if (\ob_start()) {
-            $this->componentStack[] = $name;
-
-            $this->componentData[$this->currentComponent()] = $data;
-
-            $this->slots[$this->currentComponent()] = [];
-        }
-    }
-
-    /**
-     * Get the index for the current component.
-     *
-     * @return int
-     */
-    protected function currentComponent()
-    {
-        return \count($this->componentStack) - 1;
-    }
-
-    /**
-     * Render the current component.
-     *
-     * @return string
-     * @throws Exception
-     */
-    public function renderComponent()
-    {
-        $name = \array_pop($this->componentStack);
-        //return $this->runChild($name, $this->componentData());
-        $cd=$this->componentData();
-        if (!is_array($cd)) {
-            $keys=array_keys($cd);
-            foreach ($keys as $key) {
-                if (isset($this->variables[$key])) {
-                    $backup[$key]=$this->variables[$key];
-                }
-            }
-        }
-        $r=$this->runChild($name, $cd);
-        if (!isset($keys)) {
-            return $r;
-        }
-        foreach ($keys as $key) {
-            if (isset($backup[$key])) {
-                $this->variables[$key] = $backup[$key]; // this value is recovered
-            } else {
-                unset($this->variables[$key]); // this value must be deleted
-            }
-        }
-        return $r;
-    }
-
-    /**
-     * Get the data for the given component.
-     *
-     * @return array
-     */
-    protected function componentData()
-    {
-        return \array_merge(
-            $this->componentData[\count($this->componentStack)],
-            ['slot' => \trim(\ob_get_clean())],
-            $this->slots[\count($this->componentStack)]
-        );
-    }
-
-    /**
-     * Start the slot rendering process.
-     *
-     * @param string $name
-     * @param string|null $content
-     * @return void
-     */
-    public function slot($name, $content = null)
-    {
-        if (\count(\func_get_args()) === 2) {
-            $this->slots[$this->currentComponent()][$name] = $content;
-        } elseif (\ob_start()) {
-            $this->slots[$this->currentComponent()][$name] = '';
-
-            $this->slotStack[$this->currentComponent()][] = $name;
-        }
-    }
-
-    /**
-     * Save the slot content for rendering.
-     *
-     * @return void
-     */
-    public function endSlot()
-    {
-        static::last($this->componentStack);
-
-        $currentSlot = \array_pop(
-            $this->slotStack[$this->currentComponent()]
-        );
-
-        $this->slots[$this->currentComponent()]
-        [$currentSlot] = \trim(\ob_get_clean());
-    }
-
-    /**
      * @return string
      */
     public function getPhpTag()
@@ -1840,54 +1708,6 @@ class Engine {
     public function setPhpTag($phpTag)
     {
         $this->phpTag = $phpTag;
-    }
-
-    /**
-     * @return string
-     */
-    public function getCurrentUser()
-    {
-        return $this->currentUser;
-    }
-
-    /**
-     * @param string $currentUser
-     */
-    public function setCurrentUser($currentUser)
-    {
-        $this->currentUser = $currentUser;
-    }
-
-    /**
-     * @return string
-     */
-    public function getCurrentRole()
-    {
-        return $this->currentRole;
-    }
-
-    /**
-     * @param string $currentRole
-     */
-    public function setCurrentRole($currentRole)
-    {
-        $this->currentRole = $currentRole;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getCurrentPermission()
-    {
-        return $this->currentPermission;
-    }
-
-    /**
-     * @param string[] $currentPermission
-     */
-    public function setCurrentPermission($currentPermission)
-    {
-        $this->currentPermission = $currentPermission;
     }
 
     /**
@@ -2109,7 +1929,7 @@ class Engine {
         });
         return $methods;
     }
-
+    
     /**
      * Compile html statements that start with "@".
      *
@@ -2130,7 +1950,7 @@ class Engine {
          * @return mixed|string
          */
         $callback = function ($match) {
-            if (static::contains($match[1], '@')) {
+            if (static::contains($match[1], $this->escapedTag)) {
                 // @@escaped tag
                 $match[0] = isset($match[3]) ? $match[1] . $match[3] : $match[1];
             } else {
@@ -2151,11 +1971,6 @@ class Engine {
                     // it calls the function compile<name of the tag>
                     $match[0] = $this->$method(static::get($match, 3));
                 } else {
-                    /*echo "<pre>";
-                    var_dump($match);
-                    echo "</pre>";
-                    echo "operation not defined!";
-                    */
                     //todo: $this->showError("@compile", "Operation not defined:@".$match[1], true);
                     return $match[0];
                 }
@@ -2250,11 +2065,11 @@ class Engine {
         if (\is_null($key)) {
             return $array;
         }
-        if (static::exists($array, $key)) {
+        if (static::existsView($array, $key)) {
             return $array[$key];
         }
         foreach (\explode('.', $key) as $segment) {
-            if (static::exists($array, $segment)) {
+            if (static::existsView($array, $segment)) {
                 $array = $array[$segment];
             } else {
                 return static::value($default);
@@ -2270,7 +2085,7 @@ class Engine {
      * @param string|int $key
      * @return bool
      */
-    public static function exists($array, $key)
+    public static function existsView($array, $key)
     {
         if ($array instanceof ArrayAccess) {
             return $array->offsetExists($key);

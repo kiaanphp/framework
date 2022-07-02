@@ -33,7 +33,7 @@ use Kiaan\Middleware;
 use Kiaan\DB;
 use Kiaan\Schema;
 use Kiaan\Auth;
-use Kiaan\ConnectPdo;
+use Kiaan\pdoDB;
 use Kiaan\Url;
 use Kiaan\File;
 use Kiaan\Folder;
@@ -208,6 +208,7 @@ Class Services implements Interfaces\Framework {
             session_start();
         }
     }
+
     /**
     * Config
     **/
@@ -216,6 +217,31 @@ Class Services implements Interfaces\Framework {
         Config::setRootPath(self::root());
         Config::setFolderPath(self::root(self::$config->configuration->path));
         Config::fileSystem("folder", true);
+
+        // String
+        $string = [
+            'driver' => self::$config->db->driver,
+            'host' => self::$config->db->host,
+            'db' => self::$config->db->db,
+            'user' => self::$config->db->user,
+            'pass' => self::$config->db->pass,
+            'port' => self::$config->db->port,
+        ];
+
+        // Database
+        new pdoDB();
+        pdoDB::connect(
+            $string, ( self::$config->db->error === true || trim(self::$config->db->error == 'true')) ? true : false
+        );
+        $pdo = pdoDB::connection();
+
+        Config::setPdo($pdo);
+        Config::setTable(self::$config->configuration->database->table);
+        $config = Config::db();
+
+        if(self::$config->db->error === true || trim(self::$config->db->error == 'true')){
+            $config = $config->migration();
+        }
     }
 
     /**
@@ -282,11 +308,11 @@ Class Services implements Interfaces\Framework {
         ];
 
         // Pdo
-        new ConnectPdo(
-            $string,
-            ( self::$config->db->error === true || trim(self::$config->db->error == 'true')) ? true : false
+        new pdoDB();
+        pdoDB::connect(
+            $string, ( self::$config->db->error === true || trim(self::$config->db->error == 'true')) ? true : false
         );
-        $pdo = ConnectPdo::connection();
+        $pdo = pdoDB::connection();
 
         // Connect DB
         new DB($pdo);
@@ -311,7 +337,6 @@ Class Services implements Interfaces\Framework {
     * Mail
     **/
     public static function mail() {
-
         new Mail(
             self::$config->mail->from->email,
             self::$config->mail->from->name,
@@ -321,7 +346,6 @@ Class Services implements Interfaces\Framework {
             self::$config->mail->username,
             self::$config->mail->password,
         );
-
     }
 
     /**

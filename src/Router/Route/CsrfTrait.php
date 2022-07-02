@@ -41,7 +41,7 @@ trait CsrfTrait {
      * 
      * 
     */
-    public function executeCsrf($route) {
+    protected function executeCsrf($route) {
         if($route['gate']=='web' && $route['method']!='get' && $this->csrf['enable']){
             
             if(isset($_POST[$this->csrf['input']])){

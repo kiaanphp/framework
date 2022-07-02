@@ -21,12 +21,12 @@ namespace Kiaan\Views\View;
 trait InheritanceTrait {
 
     /**
-     * Compile the content statements into valid PHP.
+     * Compile the section statements into valid PHP.
      *
      * @param string $expression
      * @return string
      */
-    protected function compileContent($expression)
+    protected function compileSection($expression)
     {
         return $this->phpTagEcho . "\$this->contentContent{$expression}; ?>";
     }
@@ -42,14 +42,25 @@ trait InheritanceTrait {
     }
 
     /**
+     * Compile the content statements into valid PHP.
+     *
+     * @param string $expression
+     * @return string
+     */
+    protected function compileContent($expression)
+    {
+        return $this->phpTag . "\$this->startSection{$expression}; ?>";
+    }
+
+    /**
      * Compile the section statements into valid PHP.
      *
      * @param string $expression
      * @return string
      */
-    protected function compileSection($expression)
+    protected function compileVsection($expression)
     {
-        return $this->phpTag . "\$this->startSection{$expression}; ?>";
+        return $this->compileContent($expression);
     }
 
     /**
@@ -63,13 +74,24 @@ trait InheritanceTrait {
     }
 
     /**
-     * Compile the end-section statements into valid PHP.
+     * Compile the end-content statements into valid PHP.
      *
      * @return string
      */
-    protected function compileEndsection()
+    protected function compileEndcontent()
     {
         return $this->phpTag . '$this->stopSection(); ?>';
+    }
+
+    /**
+     * Compile the end-Vsection statements into valid PHP.
+     *
+     * @param string $expression
+     * @return string
+     */
+    protected function compileEndVsection($expression)
+    {
+        return $this->compileEndcontent();
     }
 
     /**
@@ -157,6 +179,18 @@ trait InheritanceTrait {
         $expression = $this->stripParentheses($expression);
         return $this->phpTagEcho . '$this->includeWhen(' . $expression . '); ?>';
     }
+    
+    /**
+     * Compile the include statements into valid PHP.
+     *
+     * @param string $expression
+     * @return string
+     */
+    protected function compileIncludeUnless($expression)
+    {
+        $expression = $this->stripParentheses($expression);
+        return $this->phpTagEcho . '$this->includeUnless(' . $expression . '); ?>';
+    }
 
     /**
      * Compile the includefirst statement
@@ -170,17 +204,17 @@ trait InheritanceTrait {
         return $this->phpTagEcho . '$this->includeFirst(' . $expression . '); ?>';
     }
 
-    
     /**
-     * Compile the stack statements into the content.
+     * Compile the block statements into the content.
      *
      * @param string $expression
      * @return string
      */
-    protected function compileStack($expression)
+    protected function compileBlock($expression)
     {
         return $this->phpTagEcho . "\$this->contentPushContent{$expression}; ?>";
     }
+    
     /**
      * Compile the push statements into valid PHP.
      *
@@ -190,6 +224,17 @@ trait InheritanceTrait {
     public function compilePush($expression)
     {
         return $this->phpTag . "\$this->startPush{$expression}; ?>";
+    }
+
+    /**
+     * Compile the v-block statements into valid PHP.
+     *
+     * @param string $expression
+     * @return string
+     */
+    public function compileVblock ($expression)
+    {
+        return $this->compilePush($expression);
     }
 
     /**
@@ -216,6 +261,17 @@ trait InheritanceTrait {
     }
 
     /**
+     * Compile the p-block statements into valid PHP.
+     *
+     * @param string $expression
+     * @return string
+     */
+    public function compilePblock($expression)
+    {
+        return $this->compilePrepend($expression);
+    }
+    
+    /**
      * Compile the endpush statements into valid PHP.
      *
      * @return string
@@ -223,6 +279,16 @@ trait InheritanceTrait {
     protected function compileEndpush()
     {
         return $this->phpTag . '$this->stopPush(); ?>';
+    }
+
+    /**
+     * Compile the end-v-block statements into valid PHP.
+     *
+     * @return string
+     */
+    protected function compileEndVblock()
+    {
+        return $this->compileEndpush();
     }
 
     /**
@@ -244,47 +310,15 @@ trait InheritanceTrait {
     {
         return $this->phpTag . '$this->stopPrepend(); ?>';
     }
-
+    
     /**
-     * Compile the component statements into valid PHP.
-     *
-     * @param string $expression
-     * @return string
-     */
-    protected function compileComponent($expression)
-    {
-        return $this->phpTag . " \$this->startComponent{$expression}; ?>";
-    }
-
-    /**
-     * Compile the end-component statements into valid PHP.
+     * Compile the end-p-block statements into valid PHP.
      *
      * @return string
      */
-    protected function compileEndComponent()
+    protected function compileEndpblock()
     {
-        return $this->phpTagEcho . '$this->renderComponent(); ?>';
-    }
-
-    /**
-     * Compile the slot statements into valid PHP.
-     *
-     * @param string $expression
-     * @return string
-     */
-    protected function compileSlot($expression)
-    {
-        return $this->phpTag . " \$this->slot{$expression}; ?>";
-    }
-
-    /**
-     * Compile the end-slot statements into valid PHP.
-     *
-     * @return string
-     */
-    protected function compileEndSlot()
-    {
-        return $this->phpTag . ' $this->endSlot(); ?>';
+        return $this->compileEndPrepend();
     }
 
     /**
@@ -296,16 +330,6 @@ trait InheritanceTrait {
     protected function compileHasSection($expression)
     {
         return $this->phpTag . "if (! empty(trim(\$this->contentContent{$expression}))): ?>";
-    }
-
-    /**
-     * Compile the stop statements into valid PHP.
-     *
-     * @return string
-     */
-    protected function compileStop()
-    {
-        return $this->phpTag . '$this->stopSection(); ?>';
     }
 
     /**
