@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * Kiaan framework
+ *
+ * @author Hassan Kerdash kerdashhassan@gmail.com
+ **/
+
+/*
+|---------------------------------------------------
+| Namespace
+|---------------------------------------------------
+*/
+namespace :namespace:;
+
+/*
+|---------------------------------------------------
+| Uses
+|---------------------------------------------------
+*/
+use Kiaan\Security\Validator\Build\ValidatorBuild;
+use Kiaan\Security\Validator\Rule;
+
+/*
+|---------------------------------------------------
+| Class
+|---------------------------------------------------
+*/
+class :class: extends Rule implements ValidatorBuild
+{
+    /*
+    * Error message
+    *
+    */
+    protected $message = ":attribute :value' is not valid";
+
+    /*
+    * Fillable Params
+    *
+    */
+    protected $fillableParams = [];
+
+    /*
+    * Implicit
+    *
+    */
+    protected $implicit = false;
+
+    /*
+    * Rule check
+    *
+    */
+    public function check($value): bool
+    {
+        // Make sure required parameters exists
+        $this->requireParameters($this->fillableParams);
+
+        // Getting parameters
+        // $data = $this->parameter('data');
+
+        // Check
+        // ...
+    }
+}

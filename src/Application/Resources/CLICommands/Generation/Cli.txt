@@ -1,0 +1,55 @@
+<?php
+
+/*
+|---------------------------------------------------
+| Namespace
+|---------------------------------------------------
+*/
+namespace App\Application\Cli;
+
+/*
+|---------------------------------------------------
+| Uses
+|---------------------------------------------------
+*/
+use Kiaan\Dev\Cli\Build\CliBuild;
+use Kiaan\Cli;
+
+/*
+|---------------------------------------------------
+| Class
+|---------------------------------------------------
+*/
+class :class: implements CliBuild {
+
+    /**
+     * :method-name: method.
+     * 
+    **/
+    public function :method:()
+    {
+        return [
+            "menu" => "menu_handle",
+            "test" => "test action"
+        ];
+    }  
+
+    /**
+     * Menu handle
+     * 
+    **/
+    public function menu_handle()
+    {
+        Cli::menu(["test"]);
+    }
+
+    /**
+     * Test action
+     * 
+    **/
+    public function test()
+    {
+        echo "Hello_World";
+    }
+
+}

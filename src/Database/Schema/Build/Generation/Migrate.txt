@@ -1,0 +1,45 @@
+<?php
+
+/*
+|---------------------------------------------------
+| Namespace
+|---------------------------------------------------
+*/
+namespace App\Databases\Migrations;
+
+/*
+|---------------------------------------------------
+| Uses
+|---------------------------------------------------
+*/
+use Kiaan\Database\Schema\Build\MigrateBuild;
+use Kiaan\Schema;
+
+/*
+|---------------------------------------------------
+| Migrations
+|---------------------------------------------------
+*/
+class :class: implements MigrateBuild {
+
+    /**
+     * Migration
+     * 
+    **/
+    public function :method_migration:()
+    {
+        Schema::createTable('table')
+        ->id()
+        ->submit();
+    }  
+
+    /**
+     * Rollback
+     * 
+    **/
+    public function :method_rollback:()
+    {
+        Schema::deleteTable('table');
+    } 
+
+}
